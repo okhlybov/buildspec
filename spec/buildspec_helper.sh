@@ -1,6 +1,7 @@
 # shellcheck shell=sh
 
 # buildspec 0.1.0
+# https://github.com/okhlybov/buildspec
 
 # Defining variables and functions here will affect all specfiles.
 # Change shell options inside a function may cause different behavior,
@@ -133,14 +134,7 @@ pkg_config_packages() {
 pkg_config_cflags() {
   pcs=$(pkg_config_packages $*)
   if [ ! -z "$pcs" ]; then
-    flags="--cflags"
-    while (( $# )); do
-      case $1 in
-        -static) flags+=" $1"; shift ;;
-        *) shift ;;
-      esac
-    done
-    echo $(${PKG_CONFIG-pkg-config} $pcs $flags)
+    echo $(${PKG_CONFIG-pkg-config} $pcs --cflags)
   fi
 }
 
@@ -151,7 +145,7 @@ pkg_config_ldflags() {
     flags="--libs"
     while (( $# )); do
       case $1 in
-        -static) flags+=" $1"; shift ;;
+        -static) flags+=" --static"; shift ;;
         *) shift ;;
       esac
     done

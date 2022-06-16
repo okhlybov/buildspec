@@ -123,7 +123,7 @@ source_language() {
       -*) shift ;;
       *.c) echo c; exit ;;
       *.cc|*.CC|*.cpp|*.cxx) echo cxx; exit ;;
-      *.f|*.F|*.f90|*.f95) echo fortran; exit ;;
+      *.[Ff]|*[Ff]9?) echo fortran; exit ;;
       *) shift ;;
     esac
   done

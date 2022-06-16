@@ -1,3 +1,3 @@
 program hello
-  print *, 'hello'
+  write(*,"(A)",advance="no") "hello"
 end program

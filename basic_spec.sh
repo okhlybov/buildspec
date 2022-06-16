@@ -23,7 +23,7 @@ Context "basic"
   End
   Example "FORTRAN $1 test" fortran
     When call test_program hello.f90
-    The output should equal " hello"
+    The output should equal "hello"
     The status should be success
   End
 End

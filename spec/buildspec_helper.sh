@@ -38,7 +38,11 @@ build_program() {
   compiler=$(source_compiler $*)
   cflags=$(pkg_config_cflags $*)
   ldflags=$(pkg_config_ldflags $*)
-  program="$SHELLSPEC_TMPDIR/$RANDOM$RANDOM.exe"
+  case $(uname -s) in
+    CYGWIN*|MSYS*|MINGW*) exe=.exe ;;
+    *) exe= ;;
+  esac
+  program="$SHELLSPEC_TMPDIR/$RANDOM$RANDOM$exe"
   while (( $# )); do
     case $1 in
       -p|--pkg) shift 2 ;;
@@ -48,41 +52,47 @@ build_program() {
       *) args+=" $1"; shift ;;
     esac
   done
-  $compiler -pipe -o $program $cflags $args $ldflags && echo "$program"
+  $compiler -o $program $cflags $args $ldflags && echo $program
 }
 
 #
 program_launcher() {
   program=$1; shift
-  case $(xyz_environment $*) in
-    mpi) echo "${MPIEXEC-mpiexec} $program"; exit ;;
-    *) echo "$program"; exit ;;
+  case $(host_environment $*) in
+    mpi) echo ${MPIEXEC-mpiexec} $program; exit ;;
+    *) echo $program; exit ;;
   esac
 }
 
 #
 source_compiler() {
-  case $(xyz_environment $*) in
+  case $(host_environment $*) in
     mpi)
       case $(source_language $*) in
-        c) echo "${MPICC-mpicc}"; exit ;;
-        cxx) echo "${MPICXX-mpicxx}"; exit ;;
-        fortran) echo "${MPIFORT-mpifort}"; exit ;;
+        c) echo ${MPICC-mpicc}; exit ;;
+        cxx) echo ${MPICXX-mpicxx}; exit ;;
+        fortran) echo ${MPIFORT-mpifort}; exit ;;
+        *) echo "failed to derermine MPI compiler driver" >&2; exit -1 ;;
       esac
     ;;
     *)
       case $(source_language $*) in
-        c) echo "${CC-cc}"; exit ;;
-        cxx) echo "${CXX-c++}"; exit ;;
-        fortran) echo "${FC-gfortran}"; exit ;; # TODO MSYS2 specifics
-        *) exit -1 ;;
+        c) echo ${CC-cc}; exit ;;
+        cxx) echo ${CXX-c++}; exit ;;
+        fortran) 
+          case $MINGW_PACKAGE_PREFIX in
+            *-clang-*) echo ${FC-flang}; exit ;; # MSYS2's Clang is yet to have a FORTRAN compiler
+            *) echo ${FC-gfortran}; exit ;; # No unbranded FORTRAN compiler name, settle on GFortran
+          esac
+        ;;
+        *) echo "failed to derermine compiler" >&2; exit -1 ;;
       esac
     ;;
   esac
 }
 
 #
-xyz_environment() {
+host_environment() {
   while (( $# )); do
     case $1 in
       --xyz)
@@ -105,7 +115,8 @@ source_language() {
       -x)
         case $2 in
           f77*|f90*) echo fortran; exit ;;
-          c|c++) echo $2; exit ;;
+          c) echo c; exit ;;
+          c++) echo cxx; exit ;;
           *) exit ;;
         esac
       ;;
@@ -127,7 +138,7 @@ pkg_config_packages() {
       *) shift ;;
     esac
   done
-  echo "$pkgs"
+  echo $pkgs
 }
 
 #
